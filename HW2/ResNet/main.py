@@ -25,7 +25,7 @@ def main(config):
     print("--- Preparing Data ---")
 
     ### YOUR CODE HERE
-    data_dir = "/content/HW2/cifar-10-batches-py"
+    data_dir = "/content/636Homework/HW2/cifar-10-batches-py"
     ### YOUR CODE HERE
 
     x_train, y_train, x_test, y_test = load_data(data_dir)
@@ -35,9 +35,11 @@ def main(config):
 
     ### YOUR CODE HERE
     # First step: use the train_new set and the valid set to choose hyperparameters.
-    # model.train(x_train_new, y_train_new, 200)
-    # model.test_or_validate(x_valid, y_valid, [160, 170, 180, 190, 200])
+    #model.train(x_train_new, y_train_new, 200)
+    #model.test_or_validate(x_valid, y_valid, [160, 170, 180, 190, 200])
 
+    model.train(x_train_new, y_train_new, 1)
+    model.test_or_validate(x_valid, y_valid, [1])
     # Second step: with hyperparameters determined in the first run, re-train
     # your model on the original train set.
     # model.train(x_train, y_train, 10)
@@ -48,6 +50,6 @@ def main(config):
     ### END CODE HERE
 
 if __name__ == "__main__":
-    os.environ['CUDA_VISIBLE_DEVICES'] = '9'
+    #os.environ['CUDA_VISIBLE_DEVICES'] = '9'
     config = configure()
     main(config)

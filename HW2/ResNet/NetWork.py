@@ -100,7 +100,7 @@ class batch_norm_relu_layer(nn.Module):
         ### YOUR CODE HERE
     def forward(self, inputs: Tensor) -> Tensor:
         ### YOUR CODE HERE
-        outputs = nn.functional.relu(self.batch_norm(inputs))
+        outputs = nn.ReLU(self.batch_norm(inputs))
         return outputs
         ### YOUR CODE HERE
 
@@ -124,6 +124,7 @@ class standard_block(nn.Module):
         self.bn_relu1 = batch_norm_relu_layer(filters)
         self.conv2 = nn.Conv2d(filters, filters, kernel_size=3,stride=strides,padding=1)
         self.bn2 = nn.BatchNorm2d(filters)
+        self.shortcut = projection_shortcut
         if projection_shortcut is not None:
             self.shortcut = nn.Conv2d(first_num_filters, filters ,kernel_size=1, stride=strides)
             self.conv1 = nn.Conv2d(first_num_filters,filters,kernel_size=3 ,stride=strides,padding=1)
@@ -169,6 +170,7 @@ class bottleneck_block(nn.Module):
         self.conv2 = nn.Conv2d(filters, filters, kernel_size=3,stride=strides, padding=1)
         self.bn_relu3 = batch_norm_relu_layer(filters)
         self.conv3 = nn.Conv2d(filters, filters*4, kernel_size=1)
+        self.shortcut = projection_shortcut
         if projection_shortcut is not None:
             self.shortcut = nn.Conv2d(first_num_filters, filters ,kernel_size=1, stride=strides)
             self.conv1 = nn.Conv2d(first_num_filters, filters, kernel_size=1)

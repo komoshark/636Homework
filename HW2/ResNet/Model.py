@@ -58,8 +58,8 @@ class Cifar(nn.Module):
                 x_batch = np.array([parse_record(x, training=True) for x in x_batch])
                 y_batch = curr_y_train[i*batch_size: (i+1)*batch_size]
 
-                batch_inputs = torch.from_numpy(x_batch).cuda()
-                labels = torch.from_numpy(y_batch).cuda()
+                batch_inputs = torch.FloatTensor(x_batch).cuda()
+                labels = torch.LongTensor(y_batch).cuda()
                 predicts = self.network(batch_inputs)
                 loss = self.loss(predicts, labels)
                 ### YOUR CODE HERE
