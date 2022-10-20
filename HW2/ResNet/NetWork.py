@@ -99,14 +99,12 @@ class batch_norm_relu_layer(nn.Module):
         super(batch_norm_relu_layer, self).__init__()
         ### YOUR CODE HERE
         self.batch_norm = nn.BatchNorm2d(num_features, eps, momentum)
+        self.re_lu = nn.ReLU(inplace=False)
         ### YOUR CODE HERE
     def forward(self, inputs: Tensor) -> Tensor:
         ### YOUR CODE HERE
-        print("Line105", type(inputs))
         outputs = self.batch_norm(inputs)
-        print("Line107", type(outputs))
-        outputs = nn.ReLU(outputs)
-        print("Line109", type(outputs))
+        outputs = nn.re_lu(outputs)
         return outputs
         ### YOUR CODE HERE
 
@@ -134,11 +132,11 @@ class standard_block(nn.Module):
         if projection_shortcut is not None:
             self.shortcut = nn.Conv2d(first_num_filters, filters ,kernel_size=1, stride=strides)
             self.conv1 = nn.Conv2d(first_num_filters,filters,kernel_size=3 ,stride=strides,padding=1)
+        self.re_lu = nn.ReLU(inplace=False)
         ### YOUR CODE HERE
 
     def forward(self, inputs: Tensor) -> Tensor:
         ### YOUR CODE HERE
-        print(__name__, inputs.size())
         identity = inputs
         if self.shortcut is not None:
           identity = self.shortcut(identity)
@@ -147,7 +145,7 @@ class standard_block(nn.Module):
         outputs = self.conv2(outputs)
         outputs = self.bn2(outputs)
         outputs += identity
-        outputs = nn.ReLU(outputs)
+        outputs = self.re_lu(outputs)
         return outputs
         ### YOUR CODE HERE
 
