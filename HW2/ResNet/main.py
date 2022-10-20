@@ -25,7 +25,7 @@ def main(config):
     print("--- Preparing Data ---")
 
     ### YOUR CODE HERE
-    data_dir = ""
+    data_dir = "/content/HW2/cifar-10-batches-py"
     ### YOUR CODE HERE
 
     x_train, y_train, x_test, y_test = load_data(data_dir)

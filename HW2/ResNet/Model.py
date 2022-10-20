@@ -23,7 +23,9 @@ class Cifar(nn.Module):
         )
         ### YOUR CODE HERE
         # define cross entropy loss and optimizer
-
+        self.loss = nn.CrossEntropyLoss()
+        self.optimizer = torch.optim.Adam(nn.Module.parameters(self), lr=0.001, weight_decay=self.config.weight_decay)
+        self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=10, gamma=0.25)
         ### YOUR CODE HERE
     
     def train(self, x_train, y_train, max_epoch):
@@ -51,7 +53,15 @@ class Cifar(nn.Module):
                 # Construct the current batch.
                 # Don't forget to use "parse_record" to perform data preprocessing.
                 # Don't forget L2 weight decay
-                
+                batch_size = self.config.batch_size
+                x_batch = x_train[i*batch_size: (i+1)*batch_size, :]
+                x_batch = np.array([parse_record(x, training=True) for x in x_batch])
+                y_batch = curr_y_train[i*batch_size: (i+1)*batch_size]
+
+                batch_inputs = torch.from_numpy(x_batch).cuda()
+                labels = torch.from_numpy(y_batch).cuda()
+                predicts = self.network(batch_inputs)
+                loss = self.loss(predicts, labels)
                 ### YOUR CODE HERE
                 self.optimizer.zero_grad()
                 loss.backward()
@@ -76,7 +86,11 @@ class Cifar(nn.Module):
             preds = []
             for i in tqdm(range(x.shape[0])):
                 ### YOUR CODE HERE
-                
+                test_image = np.array([parse_record(x[i], training=False)])
+                test_input = torch.from_numpy(test_image)
+                pred = self.network(test_input)
+                _, pred = torch.max(pred, 1)
+                preds.append(pred)
                 ### END CODE HERE
 
             y = torch.tensor(y)

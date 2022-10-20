@@ -39,23 +39,28 @@ def preprocess_image(image, training):
     if training:
         ### YOUR CODE HERE
         # Resize the image to add four extra pixels on each side.
-        
+        image = np.pad(image, pad_width=((4, 4), (4, 4), (0, 0)), mode='constant',\
+                        constant_values=((0,0),(0,0), (0,0)))  
         ### YOUR CODE HERE
 
         ### YOUR CODE HERE
         # Randomly crop a [32, 32] section of the image.
         # HINT: randomly generate the upper left point of the image
-        
+        upper_left = np.random.randint(0, 9, (1,2))
+        row_idx = upper_left[0][0]
+        col_idx = upper_left[0][1]
+        image = image[row_idx: row_idx+32, col_idx: col_idx+32, :]
         ### YOUR CODE HERE
 
         ### YOUR CODE HERE
         # Randomly flip the image horizontally.
-        
+        if np.random.uniform() > 0.5:
+          image = np.fliplr(image)
         ### YOUR CODE HERE
 
     ### YOUR CODE HERE
     # Subtract off the mean and divide by the standard deviation of the pixels.
-    
+    image = (image - np.mean(image))/np.std(image)
     ### YOUR CODE HERE
 
     return image

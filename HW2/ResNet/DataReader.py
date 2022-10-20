@@ -22,7 +22,21 @@ def load_data(data_dir):
         (dtype=np.int32)
     """
     ### YOUR CODE HERE
+    x_train, y_train, x_test, y_test = [], [], [], []
+    for data_batch in ['1', '2', '3', '4', '5']:
+        with open(os.path.join(data_dir, 'data_batch_{}'.format(data_batch)), 'rb') as f:
+            data_dict = pickle.load(f, encoding='bytes')
+        x_train.append(data_dict[b'data'])
+        y_train.extend(data_dict[b'labels'])
 
+    x_train = np.concatenate(x_train)
+    y_train = np.array(y_train)
+
+    with open(os.path.join(data_dir, 'test_batch'), 'rb') as f:
+        data_dict = pickle.load(f, encoding='bytes')
+    x_test = data_dict[b'data']
+    y_test = data_dict[b'labels']
+    y_test = np.array(y_test) 
     ### YOUR CODE HERE
 
     return x_train, y_train, x_test, y_test
