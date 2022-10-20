@@ -80,7 +80,9 @@ class ResNet(nn.Module):
     def forward(self, inputs):
         outputs = self.start_layer(inputs)
         if self.resnet_version == 1:
+            print("Line83", type(outputs))
             outputs = self.batch_norm_relu_start(outputs)
+            print("Line85", type(outputs))
         for i in range(3):
             outputs = self.stack_layers[i](outputs)
         outputs = self.output_layer(outputs)
@@ -100,7 +102,11 @@ class batch_norm_relu_layer(nn.Module):
         ### YOUR CODE HERE
     def forward(self, inputs: Tensor) -> Tensor:
         ### YOUR CODE HERE
-        outputs = nn.ReLU(self.batch_norm(inputs))
+        print("Line105", type(inputs))
+        outputs = self.batch_norm(inputs)
+        print("Line107", type(outputs))
+        outputs = nn.ReLU(outputs)
+        print("Line109", type(outputs))
         return outputs
         ### YOUR CODE HERE
 
@@ -132,6 +138,7 @@ class standard_block(nn.Module):
 
     def forward(self, inputs: Tensor) -> Tensor:
         ### YOUR CODE HERE
+        print(__name__, inputs.size())
         identity = inputs
         if self.shortcut is not None:
           identity = self.shortcut(identity)
