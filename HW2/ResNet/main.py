@@ -13,11 +13,11 @@ def configure():
                         help='n: the size of ResNet-(6n+2) v1 or ResNet-(9n+2) v2')
     parser.add_argument("--batch_size", type=int, default=128, help='training batch size')
     parser.add_argument("--num_classes", type=int, default=10, help='number of classes')
-    parser.add_argument("--save_interval", type=int, default=10, 
+    parser.add_argument("--save_interval", type=int, default=1, 
                         help='save the checkpoint when epoch MOD save_interval == 0')
     parser.add_argument("--first_num_filters", type=int, default=16, help='number of classes')
     parser.add_argument("--weight_decay", type=float, default=2e-4, help='weight decay rate')
-    parser.add_argument("--modeldir", type=str, default='model_v1', help='model directory')
+    parser.add_argument("--modeldir", type=str, default='/content/636Homework/HW2/model_v1', help='model directory')
     ### YOUR CODE HERE
     return parser.parse_args()
 
@@ -50,6 +50,7 @@ def main(config):
     ### END CODE HERE
 
 if __name__ == "__main__":
+    os.environ['CUDA_VISIBLE_DEVICES'] ='0'
     #os.environ['CUDA_VISIBLE_DEVICES'] = '9'
     config = configure()
     main(config)

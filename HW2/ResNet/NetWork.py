@@ -5,13 +5,14 @@ import torch.nn as nn
 """ This script defines the network.
 """
 
+
 class ResNet(nn.Module):
     def __init__(self,
-            resnet_version,
-            resnet_size,
-            num_classes,
-            first_num_filters,
-        ):
+                 resnet_version,
+                 resnet_size,
+                 num_classes,
+                 first_num_filters,
+                 ):
         """
         1. Define hyperparameters.
         Args:
@@ -51,8 +52,10 @@ class ResNet(nn.Module):
         self.first_num_filters = first_num_filters
 
         ### YOUR CODE HERE
+        filters = 0
         # define conv1
-        self.start_layer = nn.Conv2d(3, out_channels=16, kernel_size=3, padding=1)
+        self.start_layer = nn.Conv2d(in_channels=3, out_channels=self.first_num_filters, kernel_size=3, stride=1,
+                                     padding=1, bias=False)
         ### YOUR CODE HERE
 
         # We do not include batch normalization or activation functions in V2
@@ -61,8 +64,8 @@ class ResNet(nn.Module):
         # block's projection.
         if self.resnet_version == 1:
             self.batch_norm_relu_start = batch_norm_relu_layer(
-                num_features=self.first_num_filters, 
-                eps=1e-5, 
+                num_features=self.first_num_filters,
+                eps=1e-5,
                 momentum=0.997,
             )
         if self.resnet_version == 1:
@@ -72,20 +75,20 @@ class ResNet(nn.Module):
 
         self.stack_layers = nn.ModuleList()
         for i in range(3):
-            filters = self.first_num_filters * (2**i)
+            filters = self.first_num_filters * (2 ** i)
             strides = 1 if i == 0 else 2
             self.stack_layers.append(stack_layer(filters, block_fn, strides, self.resnet_size, self.first_num_filters))
-        self.output_layer = output_layer(filters*4, self.resnet_version, self.num_classes)
-    
+        self.output_layer = output_layer(filters * 4, self.resnet_version, self.num_classes)
+
     def forward(self, inputs):
         outputs = self.start_layer(inputs)
         if self.resnet_version == 1:
             outputs = self.batch_norm_relu_start(outputs)
         for i in range(3):
-            #print(self.stack_layers[i])
             outputs = self.stack_layers[i](outputs)
         outputs = self.output_layer(outputs)
         return outputs
+
 
 #############################################################################
 # Blocks building the network
@@ -94,18 +97,21 @@ class ResNet(nn.Module):
 class batch_norm_relu_layer(nn.Module):
     """ Perform batch normalization then relu.
     """
+
     def __init__(self, num_features, eps=1e-5, momentum=0.997) -> None:
         super(batch_norm_relu_layer, self).__init__()
         ### YOUR CODE HERE
-        self.batch_norm = nn.BatchNorm2d(num_features, eps, momentum)
-        self.re_lu = nn.ReLU(inplace=False)
+        self.batch_norm = nn.BatchNorm2d(num_features=num_features, eps=eps, momentum=momentum)
+        self.relu = nn.ReLU()
         ### YOUR CODE HERE
+
     def forward(self, inputs: Tensor) -> Tensor:
         ### YOUR CODE HERE
         outputs = self.batch_norm(inputs)
-        outputs = self.re_lu(outputs)
+        outputs = self.relu(outputs)
         return outputs
         ### YOUR CODE HERE
+
 
 class standard_block(nn.Module):
     """ Creates a standard residual block for ResNet.
@@ -120,38 +126,44 @@ class standard_block(nn.Module):
         first_num_filters: An integer. The number of filters to use for the
             first block layer of the model.
     """
+
     def __init__(self, filters, projection_shortcut, strides, first_num_filters) -> None:
         super(standard_block, self).__init__()
         ### YOUR CODE HERE
+        self.projection_shortcut = projection_shortcut
+        ### YOUR CODE HERE
+
+        ### YOUR CODE HERE
+        # creating residual block for standard resnet
         #first layer
-        self.conv1 = nn.Conv2d(filters,filters,kernel_size=3,stride=1,padding=1)
+        self.conv1 = nn.Conv2d(in_channels=filters, out_channels=filters, stride=1, padding=1, kernel_size=3,
+                               bias=False)
         self.bn_relu1 = batch_norm_relu_layer(filters)
 
         #second layer
-        self.conv2 = nn.Conv2d(filters, filters, kernel_size=3,stride=1,padding=1)
-        self.bn2 = nn.BatchNorm2d(filters)
-        self.shortcut = projection_shortcut
-        self.re_lu = nn.ReLU(inplace=False)
+        self.conv2 = nn.Conv2d(in_channels=filters, out_channels=filters, stride=1, padding=1, kernel_size=3,
+                               bias=False)
+        self.bn2 = nn.BatchNorm2d(num_features=filters, eps=1e-5, momentum=0.997)
+        self.relu2 = nn.ReLU()
         ### YOUR CODE HERE
 
     def forward(self, inputs: Tensor) -> Tensor:
-        ### YOUR CODE HERE
-        identity = inputs
-        outputs = self.conv1(inputs)
+        outputs = inputs
+        if self.projection_shortcut is not None:
+            outputs = self.projection_shortcut(inputs)
+        residual = outputs
+        # first layer
+        outputs = self.conv1(outputs)
         outputs = self.bn_relu1(outputs)
-        #second layer
+        # second layer
         outputs = self.conv2(outputs)
         outputs = self.bn2(outputs)
 
-        if self.shortcut is not None:
-            identity = self.shortcut(identity)
-            print("Have Indentiy", identity.size())
-            print("Outptus", outputs.size())
-        outputs = outputs + identity
-        outputs = self.re_lu(outputs)
-        print("One Forward", outputs.size())
+        outputs = outputs + residual
+        outputs = self.relu2(outputs)
         return outputs
         ### YOUR CODE HERE
+
 
 class bottleneck_block(nn.Module):
     """ Creates a bottleneck block for ResNet.
@@ -166,42 +178,51 @@ class bottleneck_block(nn.Module):
         first_num_filters: An integer. The number of filters to use for the
             first block layer of the model.
     """
+
     def __init__(self, filters, projection_shortcut, strides, first_num_filters) -> None:
         super(bottleneck_block, self).__init__()
 
         ### YOUR CODE HERE
-        # Hint: Different from standard lib implementation, you need pay attention to 
+        # Hint: Different from standard lib implementation, you need pay attention to
         # how to define in_channel of the first bn and conv of each block based on
         # Args given above.
-        self.bn_relu1 = batch_norm_relu_layer(filters*4)
-        self.conv1 = nn.Conv2d(filters*4, filters, kernel_size=1)
-        self.bn_relu2 = batch_norm_relu_layer(filters)
-        self.conv2 = nn.Conv2d(filters, filters, kernel_size=3,stride=strides, padding=1)
-        self.bn_relu3 = batch_norm_relu_layer(filters)
-        self.conv3 = nn.Conv2d(filters, filters*4, kernel_size=1)
-        self.shortcut = projection_shortcut
-        if projection_shortcut is not None:
-            self.shortcut = nn.Conv2d(first_num_filters, filters ,kernel_size=1, stride=strides)
-            self.conv1 = nn.Conv2d(first_num_filters, filters, kernel_size=1)
-            self.bn_relu1 = batch_norm_relu_layer(first_num_filters)
+        self.projection_shortcut = projection_shortcut
+        in_channel = filters
+        out_channel = filters // 4
+        self.bn_relu1 = batch_norm_relu_layer(filters)
+        self.conv1 = nn.Conv2d(in_channels=in_channel, out_channels=out_channel, stride=1, padding=1, kernel_size=3,
+                               bias=False)
+        
+        self.bn_relu2 = batch_norm_relu_layer(out_channel)
+        self.conv2 = nn.Conv2d(in_channels=out_channel, out_channels=out_channel, stride=1, padding=1, kernel_size=3,
+                               bias=False)
+
+        self.bn_relu3 = batch_norm_relu_layer(out_channel)
+        self.conv3 = nn.Conv2d(in_channels=out_channel, out_channels=in_channel, stride=1, padding=1, kernel_size=3,
+                               bias=False)
         ### YOUR CODE HERE
-    
+
     def forward(self, inputs: Tensor) -> Tensor:
         ### YOUR CODE HERE
         # The projection shortcut should come after the first batch norm and ReLU
-		    # since it performs a 1x1 convolution.
-        identity = inputs
-        if self.shortcut is not None:
-            identity = self.shortcut(identity)
-        outputs = self.bn_relu1(inputs)
+        # since it performs a 1x1 convolution.
+        outputs = inputs
+        if self.projection_shortcut is not None:
+            outputs = self.projection_shortcut(inputs)
+        residual = outputs
+
+        outputs = self.bn_relu1(outputs)
         outputs = self.conv1(outputs)
+
         outputs = self.bn_relu2(outputs)
         outputs = self.conv2(outputs)
+        
         outputs = self.bn_relu3(outputs)
         outputs = self.conv3(outputs)
-        outputs += identity
-        return outputs
+
+        return outputs + residual
         ### YOUR CODE HERE
+
 
 class stack_layer(nn.Module):
     """ Creates one stack of standard blocks or bottleneck blocks.
@@ -216,6 +237,7 @@ class stack_layer(nn.Module):
         first_num_filters: An integer. The number of filters to use for the
             first block layer of the model.
     """
+
     def __init__(self, filters, block_fn, strides, resnet_size, first_num_filters) -> None:
         super(stack_layer, self).__init__()
         filters_out = filters * 4 if block_fn is bottleneck_block else filters
@@ -233,18 +255,18 @@ class stack_layer(nn.Module):
             self.projection_shortcut = nn.Sequential(
                 nn.Conv2d(in_channels=in_filters, out_channels=filters_out, stride=strides, kernel_size=1,
                           bias=False), nn.BatchNorm2d(filters_out))
-        blocks = []
+        stack_layers = []
         for i in range(resnet_size):
             self.projection_shortcut = None if i > 0 else self.projection_shortcut
-            blocks.append(block_fn(filters_out, self.projection_shortcut, strides, first_num_filters))
-        self.blocks = nn.Sequential(*blocks)
+            stack_layers.append(block_fn(filters_out, self.projection_shortcut, strides, first_num_filters))
+        self.stack = nn.Sequential(*stack_layers)
         ### END CODE HERE
-    
+
     def forward(self, inputs: Tensor) -> Tensor:
         ### END CODE HERE
-        outputs = self.blocks(inputs)
-        return outputs
+        return self.stack(inputs)
         ### END CODE HERE
+
 
 class output_layer(nn.Module):
     """ Implement the output layer.
@@ -254,27 +276,27 @@ class output_layer(nn.Module):
         resnet_version: 1 or 2, If 2, use the bottleneck blocks.
         num_classes: A positive integer. Define the number of classes.
     """
+
     def __init__(self, filters, resnet_version, num_classes) -> None:
         super(output_layer, self).__init__()
         # Only apply the BN and ReLU for model that does pre_activation in each
-		# bottleneck block, e.g. resnet V2.
-        if (resnet_version == 2):
+        # bottleneck block, e.g. resnet V2.
+        if resnet_version == 2:
             self.bn_relu = batch_norm_relu_layer(filters, eps=1e-5, momentum=0.997)
-        
+
         ### END CODE HERE
-        self.resnet_version = resnet_version
-        self.avg_pool = nn.AdaptiveAvgPool2d((1,1))
-        self.fully_conv = nn.Sequential(
-          nn.Flatten(),
-          nn.Linear(int(filters/4), num_classes)
-        )
+        if resnet_version == 1:
+            filters = filters // 4
+        self.avg_pool = nn.AvgPool2d(8)
+        self.fc = nn.Linear(in_features=filters, out_features=num_classes, bias=True)
+        self.softmax = nn.Softmax(dim=-1)
         ### END CODE HERE
-    
+
     def forward(self, inputs: Tensor) -> Tensor:
         ### END CODE HERE
-        if self.resnet_version == 2:
-          inputs = self.bn_relu(inputs)
         outputs = self.avg_pool(inputs)
-        outputs = self.fully_conv(inputs)
+        outputs = outputs.view(outputs.size(0), -1)
+        outputs = self.fc(outputs)
+        outputs = self.softmax(outputs)
         return outputs
         ### END CODE HERE

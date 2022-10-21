@@ -60,7 +60,8 @@ class Cifar(nn.Module):
 
                 batch_inputs = torch.FloatTensor(x_batch).cuda()
                 labels = torch.LongTensor(y_batch).cuda()
-                predicts = self.network(batch_inputs)
+                model = self.network.cuda()
+                predicts = model(batch_inputs)
                 loss = self.loss(predicts, labels)
                 ### YOUR CODE HERE
                 self.optimizer.zero_grad()
