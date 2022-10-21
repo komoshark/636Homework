@@ -80,10 +80,9 @@ class ResNet(nn.Module):
     def forward(self, inputs):
         outputs = self.start_layer(inputs)
         if self.resnet_version == 1:
-            print("Line83", type(outputs))
             outputs = self.batch_norm_relu_start(outputs)
-            print("Line85", type(outputs))
         for i in range(3):
+            #print(self.stack_layers[i])
             outputs = self.stack_layers[i](outputs)
         outputs = self.output_layer(outputs)
         return outputs
@@ -104,7 +103,7 @@ class batch_norm_relu_layer(nn.Module):
     def forward(self, inputs: Tensor) -> Tensor:
         ### YOUR CODE HERE
         outputs = self.batch_norm(inputs)
-        outputs = nn.re_lu(outputs)
+        outputs = self.re_lu(outputs)
         return outputs
         ### YOUR CODE HERE
 
@@ -138,14 +137,18 @@ class standard_block(nn.Module):
     def forward(self, inputs: Tensor) -> Tensor:
         ### YOUR CODE HERE
         identity = inputs
-        if self.shortcut is not None:
-          identity = self.shortcut(identity)
         outputs = self.conv1(inputs)
         outputs = self.bn_relu1(outputs)
         outputs = self.conv2(outputs)
         outputs = self.bn2(outputs)
-        outputs += identity
+
+        if self.shortcut is not None:
+            identity = self.shortcut(identity)
+            print("Have Indentiy", identity.size())
+            print("Outptus", outputs.size())
+        outputs = outputs + identity
         outputs = self.re_lu(outputs)
+        print("One Forward", outputs.size())
         return outputs
         ### YOUR CODE HERE
 
@@ -188,7 +191,7 @@ class bottleneck_block(nn.Module):
 		    # since it performs a 1x1 convolution.
         identity = inputs
         if self.shortcut is not None:
-          identity = self.shortcut(identity)
+            identity = self.shortcut(identity)
         outputs = self.bn_relu1(inputs)
         outputs = self.conv1(outputs)
         outputs = self.bn_relu2(outputs)
@@ -218,22 +221,22 @@ class stack_layer(nn.Module):
         ### END CODE HERE
         # projection_shortcut = ?
         # Only the first block per stack_layer uses projection_shortcut and strides
+        self.projection_shortcut = None
+        if block_fn is standard_block:
+            if first_num_filters != filters:
+                self.projection_shortcut = nn.Sequential(
+                    nn.Conv2d(in_channels=filters_out // 2, out_channels=filters_out, stride=strides, kernel_size=1,
+                              bias=False), nn.BatchNorm2d(filters_out))
+        elif block_fn is bottleneck_block:
+            in_filters = filters if first_num_filters == filters else filters * 2
+            self.projection_shortcut = nn.Sequential(
+                nn.Conv2d(in_channels=in_filters, out_channels=filters_out, stride=strides, kernel_size=1,
+                          bias=False), nn.BatchNorm2d(filters_out))
         blocks = []
         for i in range(resnet_size):
-          if block_fn is standard_block:
-            if i == 0:
-              if filters != first_num_filters:
-                blocks.append(standard_block(filters, 1, strides, filters//2))
-              else:
-                blocks.append(standard_block(filters, None, strides, first_num_filters))
-            else:
-              blocks.append(standard_block(filters, None, 1, filters))
-          elif(block_fn is bottleneck_block):
-            blocks.append(bottleneck_block(filters, 1, strides, first_num_filters))
-            blocks.append(bottleneck_block(filters, None, strides, first_num_filters))
-          self.blocks = nn.Sequential(*blocks)
-
-
+            self.projection_shortcut = None if i > 0 else self.projection_shortcut
+            blocks.append(block_fn(filters_out, self.projection_shortcut, strides, first_num_filters))
+        self.blocks = nn.Sequential(*blocks)
         ### END CODE HERE
     
     def forward(self, inputs: Tensor) -> Tensor:
