@@ -64,7 +64,7 @@ class Cifar(nn.Module):
                 curr_y_batch_tensor = torch.FloatTensor(curr_y_batch).cuda()
                 model = self.network.cuda()
                 outputs = model(curr_x_batch_tensor)
-                loss = self.crossEntropyloss(outputs, curr_y_batch_tensor.long())
+                loss = self.loss(outputs, curr_y_batch_tensor.long())
                 ### YOUR CODE HERE
                 self.optimizer.zero_grad()
                 loss.backward()
@@ -90,7 +90,7 @@ class Cifar(nn.Module):
             for i in tqdm(range(x.shape[0])):
                 ### YOUR CODE HERE
                 test_image = np.array([parse_record(x[i], training=False)])
-                test_input = torch.from_numpy(test_image)
+                test_input = torch.FloatTensor(test_image).cuda()
                 pred = self.network(test_input)
                 _, pred = torch.max(pred, 1)
                 preds.append(pred)
