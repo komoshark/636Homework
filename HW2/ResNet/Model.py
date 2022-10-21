@@ -23,9 +23,10 @@ class Cifar(nn.Module):
         )
         ### YOUR CODE HERE
         # define cross entropy loss and optimizer
+        self.network = self.network.cuda()
+        self.learning_rate = 0.1
         self.loss = nn.CrossEntropyLoss()
         self.optimizer = torch.optim.Adam(nn.Module.parameters(self), lr=0.001, weight_decay=self.config.weight_decay)
-        self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=10, gamma=0.25)
         ### YOUR CODE HERE
     
     def train(self, x_train, y_train, max_epoch):
@@ -35,7 +36,7 @@ class Cifar(nn.Module):
         num_batches = num_samples // self.config.batch_size
 
         print('### Training... ###')
-        for epoch in range(1, max_epoch+1):
+        for epoch in range(1, max_epoch + 1):
             start_time = time.time()
             # Shuffle
             shuffle_index = np.random.permutation(num_samples)
@@ -45,31 +46,32 @@ class Cifar(nn.Module):
             ### YOUR CODE HERE
             # Set the learning rate for this epoch
             # Usage example: divide the initial learning rate by 10 after several epochs
-            
+            self.learning_rate = 0.1
+            if epoch % 50 == 0:
+                self.learning_rate = self.learning_rate / 10
+            loss = 0
+
             ### YOUR CODE HERE
-            
             for i in range(num_batches):
                 ### YOUR CODE HERE
                 # Construct the current batch.
                 # Don't forget to use "parse_record" to perform data preprocessing.
                 # Don't forget L2 weight decay
-                batch_size = self.config.batch_size
-                x_batch = x_train[i*batch_size: (i+1)*batch_size, :]
-                x_batch = np.array([parse_record(x, training=True) for x in x_batch])
-                y_batch = curr_y_train[i*batch_size: (i+1)*batch_size]
-
-                batch_inputs = torch.FloatTensor(x_batch).cuda()
-                labels = torch.LongTensor(y_batch).cuda()
+                curr_x_batch = np.array([parse_record(x, True) for x in
+                                curr_x_train[i * self.config.batch_size: (i + 1) * self.config.batch_size]])
+                curr_y_batch = curr_y_train[i * self.config.batch_size: (i + 1) * self.config.batch_size]
+                curr_x_batch_tensor = torch.FloatTensor(curr_x_batch).cuda()
+                curr_y_batch_tensor = torch.FloatTensor(curr_y_batch).cuda()
                 model = self.network.cuda()
-                predicts = model(batch_inputs)
-                loss = self.loss(predicts, labels)
+                outputs = model(curr_x_batch_tensor)
+                loss = self.crossEntropyloss(outputs, curr_y_batch_tensor.long())
                 ### YOUR CODE HERE
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
 
                 print('Batch {:d}/{:d} Loss {:.6f}'.format(i, num_batches, loss), end='\r', flush=True)
-            
+
             duration = time.time() - start_time
             print('Epoch {:d} Loss {:.6f} Duration {:.3f} seconds.'.format(epoch, loss, duration))
 
