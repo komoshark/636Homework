@@ -123,14 +123,14 @@ class standard_block(nn.Module):
     def __init__(self, filters, projection_shortcut, strides, first_num_filters) -> None:
         super(standard_block, self).__init__()
         ### YOUR CODE HERE
-        self.conv1 = nn.Conv2d(filters,filters,kernel_size=3,stride=strides,padding=1)
+        #first layer
+        self.conv1 = nn.Conv2d(filters,filters,kernel_size=3,stride=1,padding=1)
         self.bn_relu1 = batch_norm_relu_layer(filters)
-        self.conv2 = nn.Conv2d(filters, filters, kernel_size=3,stride=strides,padding=1)
+
+        #second layer
+        self.conv2 = nn.Conv2d(filters, filters, kernel_size=3,stride=1,padding=1)
         self.bn2 = nn.BatchNorm2d(filters)
         self.shortcut = projection_shortcut
-        if projection_shortcut is not None:
-            self.shortcut = nn.Conv2d(first_num_filters, filters ,kernel_size=1, stride=strides)
-            self.conv1 = nn.Conv2d(first_num_filters,filters,kernel_size=3 ,stride=strides,padding=1)
         self.re_lu = nn.ReLU(inplace=False)
         ### YOUR CODE HERE
 
@@ -139,6 +139,7 @@ class standard_block(nn.Module):
         identity = inputs
         outputs = self.conv1(inputs)
         outputs = self.bn_relu1(outputs)
+        #second layer
         outputs = self.conv2(outputs)
         outputs = self.bn2(outputs)
 
